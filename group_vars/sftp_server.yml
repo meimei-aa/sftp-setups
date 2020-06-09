@@ -1,0 +1,16 @@
+---
+# All SFTP user should be in "sftp" group
+sftp_group_name: sftp
+sftp_users:
+  - name: user_a
+    group: "{{ sftp_group_name }}"
+    password: ""
+    shell: /sbin/nologin
+    comment: "sftp user for user_a"
+    public_key: ~/.ssh/user_a.pub
+  - name: user_b
+    group: "{{ sftp_group_name }}"
+    password: ""
+    shell: /sbin/nologin
+    comment: "sftp user for user_b"
+    public_key: ~/.ssh/user_b.pub

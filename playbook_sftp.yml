@@ -1,0 +1,44 @@
+- hosts: all
+  become: true
+  gather_facts: false
+      
+  tasks:
+    - name: SFTP-Server | Create SFTP group
+      group:
+        name: "{{ sftp_group_name }}"
+        state: present
+
+    - name: SFTP-Server | Alter sftp subsystem entry
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: '^Subsystem(\s+)sftp'
+        line: "Subsystem sftp internal-sftp"
+        state: present
+
+    - name: SFTP-Server | Add sshd_config block for sftp group
+      blockinfile:
+        dest: /etc/ssh/sshd_config
+        marker: '# {mark} SFTP-Server sftp block'
+        block: |
+          Match Group sftp
+              ChrootDirectory /
+              AllowTCPForwarding no
+              X11Forwarding no
+              ForceCommand internal-sftp
+              AuthorizedKeysFile /home/%u/.ssh/authorized_keys
+
+    - name: SFTP-Server | Create SFTP users
+      user:
+        name: "{{ item.name }}"
+        group:  "{{ item.group }}"
+        password: "{{ item.password }}"
+        shell: "{{ item.shell }}"
+        comment: "{{ item.comment }}"
+        state: present
+      with_items: "{{ sftp_users }}"
+
+    - name: SFTP-Server | Install public keys
+      authorized_key:
+        user: "{{ item.name }}"
+        key: "{{ lookup('file', item.public_key) }}"
+      with_items: "{{ sftp_users }}"
